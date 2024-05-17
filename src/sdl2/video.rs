@@ -702,6 +702,7 @@ impl From<WindowContext> for Window {
 }
 
 unsafe impl Send for Window {}
+unsafe impl Sync for Window {}
 
 impl_raw_accessors!((GLContext, sys::SDL_GLContext));
 
