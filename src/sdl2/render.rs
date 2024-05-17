@@ -49,7 +49,7 @@ use std::mem;
 use std::mem::{transmute, MaybeUninit};
 use std::ops::Deref;
 use std::ptr;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::sys;
 use crate::sys::SDL_BlendMode;
@@ -208,7 +208,7 @@ impl RendererInfo {
 /// When the `RendererContext` is dropped, it destroys the `SDL_Renderer`
 pub struct RendererContext<T> {
     raw: *mut sys::SDL_Renderer,
-    _target: Rc<T>,
+    _target: Arc<T>,
 }
 
 impl<T> Drop for RendererContext<T> {
@@ -247,7 +247,7 @@ impl<T> RendererContext<T> {
         self.raw
     }
 
-    pub unsafe fn from_ll(raw: *mut sys::SDL_Renderer, target: Rc<T>) -> Self {
+    pub unsafe fn from_ll(raw: *mut sys::SDL_Renderer, target: Arc<T>) -> Self {
         RendererContext {
             raw,
             _target: target,
@@ -345,7 +345,7 @@ impl<'s> RenderTarget for Surface<'s> {
 /// ```
 pub struct Canvas<T: RenderTarget> {
     target: T,
-    context: Rc<RendererContext<T::Context>>,
+    context: Arc<RendererContext<T::Context>>,
     default_pixel_format: PixelFormatEnum,
 }
 
@@ -363,7 +363,7 @@ impl<'s> Canvas<Surface<'s>> {
         let raw_renderer = unsafe { sys::SDL_CreateSoftwareRenderer(surface.raw()) };
         if !raw_renderer.is_null() {
             let context =
-                Rc::new(unsafe { RendererContext::from_ll(raw_renderer, surface.context()) });
+                Arc::new(unsafe { RendererContext::from_ll(raw_renderer, surface.context()) });
             let default_pixel_format = surface.pixel_format_enum();
             Ok(Canvas {
                 target: surface,
@@ -662,7 +662,7 @@ impl<T: RenderTarget> Canvas<T> {
 /// render to a `Canvas` not being the parent of the `Texture`'s `TextureCreator` is undefined
 /// behavior.
 pub struct TextureCreator<T> {
-    context: Rc<RendererContext<T>>,
+    context: Arc<RendererContext<T>>,
     default_pixel_format: PixelFormatEnum,
 }
 
@@ -703,7 +703,7 @@ impl CanvasBuilder {
         if raw.is_null() {
             Err(SdlError(get_error()))
         } else {
-            let context = Rc::new(unsafe { RendererContext::from_ll(raw, self.window.context()) });
+            let context = Arc::new(unsafe { RendererContext::from_ll(raw, self.window.context()) });
             let default_pixel_format = self.window.window_pixel_format();
             Ok(Canvas {
                 context,
