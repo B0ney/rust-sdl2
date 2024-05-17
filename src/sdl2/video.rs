@@ -701,6 +701,8 @@ impl From<WindowContext> for Window {
     }
 }
 
+unsafe impl Send for WindowContext {}
+
 impl_raw_accessors!((GLContext, sys::SDL_GLContext));
 
 impl VideoSubsystem {
